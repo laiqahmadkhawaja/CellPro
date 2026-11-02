@@ -17,12 +17,17 @@ android {
 
     signingConfigs {
         create("release") {
-            val ksPath = System.getenv("KEYSTORE_PATH")
-            if (ksPath != null) {
-                storeFile = file(ksPath)
-                storePassword = System.getenv("KS_PASS")
-                keyAlias = System.getenv("KEY_ALIAS")
-                keyPassword = System.getenv("KS_PASS")
+            val ksPath = System.getenv("KEYSTORE_PATH") ?: "../signing/release.jks"
+            val ksFile = file(ksPath)
+            if (ksFile.exists()) {
+                storeFile = ksFile
+                storePassword = System.getenv("KS_PASS") ?: "CellPro@2026Key"
+                keyAlias = System.getenv("KEY_ALIAS") ?: "cellpro"
+                keyPassword = System.getenv("KS_PASS") ?: "CellPro@2026Key"
+                enableV1Signing = true
+                enableV2Signing = true
+                enableV3Signing = true
+                enableV4Signing = false
             }
         }
     }
@@ -30,9 +35,7 @@ android {
     buildTypes {
         release {
             isMinifyEnabled = false
-            if (System.getenv("KEYSTORE_PATH") != null) {
-                signingConfig = signingConfigs.getByName("release")
-            }
+            signingConfig = signingConfigs.getByName("release")
         }
     }
 

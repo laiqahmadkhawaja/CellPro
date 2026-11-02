@@ -27,11 +27,11 @@ jobs:
             KS_PASS="$SECRET_KS_PASS"
             KEY_ALIAS="$SECRET_KEY_ALIAS"
           else
-            KS_PASS=$(openssl rand -hex 16)
-            KEY_ALIAS=release
-            keytool -genkeypair -v -keystore signing/release.jks -alias "$KEY_ALIAS" -keyalg RSA -keysize 2048 -validity 10000 -storepass "$KS_PASS" -keypass "$KS_PASS" -dname "CN=App Owner, O=App, C=US"
-            echo "Keystore password: $KS_PASS" > signing/KEEP-THIS-PASSWORD.txt
-            echo "Key alias: $KEY_ALIAS" >> signing/KEEP-THIS-PASSWORD.txt
+            KS_PASS="CellPro@2026Key"
+            KEY_ALIAS="cellpro"
+            if [ ! -f signing/release.jks ]; then
+              keytool -genkeypair -v -keystore signing/release.jks -alias "$KEY_ALIAS" -keyalg RSA -keysize 2048 -validity 10000 -storepass "$KS_PASS" -keypass "$KS_PASS" -dname "CN=CellPro, OU=Mobile, O=CellPro, L=Lahore, ST=Punjab, C=PK"
+            fi
           fi
           echo "KEYSTORE_PATH=$GITHUB_WORKSPACE/signing/release.jks" >> "$GITHUB_ENV"
           echo "KS_PASS=$KS_PASS" >> "$GITHUB_ENV"
