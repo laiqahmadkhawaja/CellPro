@@ -357,11 +357,16 @@ $(document).on('input', '.row-price, .row-extra, #inp-paid-amount', recalcTotals
 
 $('#btn-add-device-row').on('click', function() {
     let rowHtml = $('#devices-tbody tr:first').clone();
+    rowHtml.find('.select2-container').remove();
+    rowHtml.find('select').removeClass('select2-hidden-accessible').removeAttr('data-select2-id');
     rowHtml.find('input').val('');
     rowHtml.find('.row-extra').val('0.00');
     rowHtml.find('input[name="ram[]"]').val('8GB');
     rowHtml.find('input[name="storage[]"]').val('256GB');
     $('#devices-tbody').append(rowHtml);
+    if (typeof initSearchableSelects === 'function') {
+        initSearchableSelects(rowHtml);
+    }
 });
 
 $(document).on('click', '.btn-remove-row', function() {

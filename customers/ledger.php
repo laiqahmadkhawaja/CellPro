@@ -165,7 +165,17 @@ foreach ($transactions as &$t) {
 unset($t);
 ?>
 
-<div class="d-flex justify-content-between align-items-center mb-3">
+<?= renderPrintHeader(
+    'CUSTOMER STATEMENT OF ACCOUNT',
+    'Customer Ledger & Transaction Statement',
+    [
+        'Customer' => $customer['name'],
+        'Mobile' => $customer['phone'] ?: 'N/A',
+        'Current Due' => formatCurrency($customer['current_balance'])
+    ]
+) ?>
+
+<div class="d-flex justify-content-between align-items-center mb-3 no-print">
     <div>
         <h5 class="fw-bold m-0"><i class="bi bi-journal-text text-primary me-2"></i>Customer Ledger: <?= htmlspecialchars($customer['name']) ?></h5>
         <small class="text-muted">Mobile: <?= htmlspecialchars($customer['phone']) ?> &bull; Current Due: <span class="fw-bold text-danger"><?= formatCurrency($customer['current_balance']) ?></span></small>

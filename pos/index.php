@@ -4,7 +4,7 @@ $page_title = 'Point of Sale (POS)';
 require_once __DIR__ . '/../includes/header.php';
 
 $branch_id = getActiveBranchId();
-$customers = $pdo->query("SELECT id, name, phone, current_balance FROM customers ORDER BY name ASC")->fetchAll();
+$customers = $pdo->query("SELECT id, name, phone, current_balance FROM customers ORDER BY (id = 1) DESC, name ASC")->fetchAll();
 $financial_accounts = getFinancialAccounts($pdo, $branch_id);
 
 $tax_enabled = (int)getSetting('tax_enabled', 0);
@@ -60,7 +60,7 @@ $tax_name = getSetting('tax_name', 'Sales Tax');
                     <div class="flex-grow-1">
                         <select id="pos-customer" class="form-select form-select-sm">
                             <?php foreach ($customers as $c): ?>
-                                <option value="<?= $c['id'] ?>" data-balance="<?= $c['current_balance'] ?>">
+                                <option value="<?= $c['id'] ?>" data-balance="<?= $c['current_balance'] ?>" <?= $c['id'] == 1 ? 'selected' : '' ?>>
                                     <?= htmlspecialchars($c['name']) ?> (<?= $c['phone'] ?>)
                                     <?= $c['current_balance'] > 0 ? ' [Due: Rs. ' . number_format($c['current_balance']) . ']' : '' ?>
                                 </option>
@@ -168,9 +168,12 @@ $tax_name = getSetting('tax_name', 'Sales Tax');
                     <button type="button" class="btn btn-outline-secondary btn-sm flex-fill py-0 quick-cash" data-val="50000">50k</button>
                 </div>
 
-                <div class="d-flex justify-content-between small mb-3">
+                <div class="d-flex justify-content-between small mb-2">
                     <span class="text-muted" id="balance-label">Remaining Balance:</span>
                     <span class="fw-bold" id="summary-change-due">Rs. 0.00</span>
+                </div>
+                <div id="walkin-credit-warning" class="alert alert-danger py-1 px-2 small mb-3 d-none">
+                    <i class="bi bi-shield-lock-fill me-1"></i> Credit sale is not allowed for Walk-in Customer. Full payment is required.
                 </div>
 
                 <button type="button" id="pos-btn-checkout" class="btn btn-success btn-lg w-100 fw-bold shadow-sm py-2">
@@ -315,28 +318,51 @@ function renderCatalogue(items) {
     if (items.mobiles && items.mobiles.length) {
         items.mobiles.forEach(m => {
             count++;
-            let conditionBadge = m.device_condition === 'new' 
-                ? '<span class="badge bg-primary">NEW</span>' 
-                : '<span class="badge bg-info">USED (' + m.battery_health + '%)</span>';
-            let ptaBadge = m.pta_status === 'approved' 
-                ? '<span class="badge bg-success-subtle text-success border">PTA Approved</span>' 
-                : '<span class="badge bg-danger-subtle text-danger border">Non-PTA</span>';
+            let isUsed = (m.device_condition === 'used');
+            let stockCount = parseInt(m.available_stock || 1);
+            let conditionBadge = isUsed
+                ? `<span class="badge bg-warning-subtle text-dark border border-warning-subtle px-2 py-1 rounded-pill" style="font-size:0.68rem; font-weight:600;"><i class="bi bi-battery-charging me-1 text-warning"></i>USED ${m.battery_health ? m.battery_health + '%' : ''}</span>`
+                : `<span class="badge bg-primary text-white px-2 py-1 rounded-pill" style="font-size:0.68rem; font-weight:600;"><i class="bi bi-stars me-1"></i>NEW</span>`;
+
+            let ptaBadge = '';
+            if (m.pta_status === 'approved') {
+                ptaBadge = '<span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1 rounded-pill" style="font-size:0.68rem; flex-shrink:0;"><i class="bi bi-shield-check me-1"></i>PTA</span>';
+            } else if (m.pta_status === 'cpid') {
+                ptaBadge = '<span class="badge bg-info-subtle text-info border border-info-subtle px-2 py-1 rounded-pill" style="font-size:0.68rem; flex-shrink:0;">CPID</span>';
+            } else {
+                ptaBadge = '<span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2 py-1 rounded-pill" style="font-size:0.68rem; flex-shrink:0;">Non-PTA</span>';
+            }
+
+            let imeiLabel = isUsed
+                ? `<div class="d-flex align-items-center justify-content-between w-100">
+                     <span class="text-truncate"><i class="bi bi-upc me-1 text-muted"></i>IMEI: ${m.imei_1 || 'N/A'}</span>
+                     <span class="badge bg-light text-secondary border px-1 py-0" style="font-size:0.65rem;">1 Unit</span>
+                   </div>`
+                : `<div class="d-flex align-items-center justify-content-between w-100">
+                     <span class="text-truncate text-muted"><i class="bi bi-box-seam text-primary me-1"></i>Box Pack</span>
+                     <span class="badge bg-light text-primary border border-primary-subtle px-2 py-0 fw-semibold" style="font-size:0.7rem;"><i class="bi bi-check2-circle me-1"></i>${stockCount} in stock</span>
+                   </div>`;
+
+            let specsList = [m.ram, m.storage].filter(Boolean).join(' / ');
 
             html += `
             <div class="col-6 col-sm-6 col-md-4 col-xl-3">
-                <div class="pos-product-card is-device" onclick='addToCartMobile(${JSON.stringify(m).replace(/'/g, "&apos;")})'>
+                <div class="pos-product-card is-device ${isUsed ? 'is-used' : ''}" onclick='addToCartMobile(${JSON.stringify(m).replace(/'/g, "&apos;")})'>
                     <div>
-                        <div class="d-flex justify-content-between align-items-start mb-1">
+                        <div class="card-badge-row">
                             ${conditionBadge}
                             ${ptaBadge}
                         </div>
-                        <h6 class="fw-bold mb-1 text-dark" style="font-size:0.85rem;">${m.model_name}</h6>
-                        <div class="small text-muted mb-1">${m.ram || ''} ${m.storage || ''} &bull; ${m.color || ''}</div>
-                        <div class="font-monospace text-muted" style="font-size:0.7rem;">IMEI: ${m.imei_1}</div>
+                        <div class="card-title" title="${m.model_name}">${m.model_name}</div>
+                        <div class="card-specs">
+                            ${specsList ? `<span class="badge bg-light text-secondary border px-1 py-0" style="font-size:0.7rem;">${specsList}</span>` : ''}
+                            ${m.color ? `<span class="text-truncate" style="max-width:90px;">${m.color}</span>` : ''}
+                        </div>
+                        <div class="card-imei">${imeiLabel}</div>
                     </div>
-                    <div class="mt-2 pt-2 border-top d-flex justify-content-between align-items-center">
-                        <span class="fw-bold text-primary" style="font-size:0.9rem;">Rs. ${Number(m.selling_price).toLocaleString()}</span>
-                        <button class="btn btn-sm btn-primary py-0 px-2"><i class="bi bi-plus-lg"></i></button>
+                    <div class="card-footer-row">
+                        <span class="card-price">Rs. ${Number(m.selling_price).toLocaleString()}</span>
+                        <button type="button" class="card-add-btn" aria-label="Add to cart"><i class="bi bi-plus-lg"></i></button>
                     </div>
                 </div>
             </div>`;
@@ -348,23 +374,26 @@ function renderCatalogue(items) {
         items.accessories.forEach(a => {
             count++;
             let stockBadge = a.quantity > a.min_stock_level
-                ? `<span class="badge bg-light text-dark border">Stock: ${a.quantity}</span>`
-                : `<span class="badge bg-danger">Low: ${a.quantity}</span>`;
+                ? `<span class="badge bg-light text-dark border px-2 py-1 rounded-pill" style="font-size:0.68rem;">Stock: ${a.quantity}</span>`
+                : `<span class="badge bg-danger text-white px-2 py-1 rounded-pill" style="font-size:0.68rem;">Low: ${a.quantity}</span>`;
 
             html += `
             <div class="col-6 col-sm-6 col-md-4 col-xl-3">
                 <div class="pos-product-card" onclick='addToCartAccessory(${JSON.stringify(a).replace(/'/g, "&apos;")})'>
                     <div>
-                        <div class="d-flex justify-content-between align-items-start mb-1">
-                            <span class="badge bg-secondary">${a.brand_name || 'Item'}</span>
+                        <div class="card-badge-row">
+                            <span class="badge bg-light text-secondary border px-2 py-1 rounded-pill" style="font-size:0.68rem;">${a.brand_name || 'Item'}</span>
                             ${stockBadge}
                         </div>
-                        <h6 class="fw-bold mb-1 text-dark" style="font-size:0.85rem;">${a.name}</h6>
-                        <div class="font-monospace text-muted" style="font-size:0.7rem;">${a.barcode || a.sku || ''}</div>
+                        <div class="card-title" title="${a.name}">${a.name}</div>
+                        <div class="card-specs">
+                            <span class="badge bg-light text-muted border px-1 py-0" style="font-size:0.7rem;">${a.category_name || 'Accessory'}</span>
+                        </div>
+                        <div class="card-imei"><i class="bi bi-upc me-1 text-muted"></i><span>${a.barcode || a.sku || 'N/A'}</span></div>
                     </div>
-                    <div class="mt-2 pt-2 border-top d-flex justify-content-between align-items-center">
-                        <span class="fw-bold text-dark" style="font-size:0.9rem;">Rs. ${Number(a.retail_price).toLocaleString()}</span>
-                        <button class="btn btn-sm btn-outline-primary py-0 px-2"><i class="bi bi-plus-lg"></i></button>
+                    <div class="card-footer-row">
+                        <span class="card-price text-dark">Rs. ${Number(a.retail_price).toLocaleString()}</span>
+                        <button type="button" class="card-add-btn" style="background:#475569;" aria-label="Add to cart"><i class="bi bi-plus-lg"></i></button>
                     </div>
                 </div>
             </div>`;
@@ -400,22 +429,54 @@ function fetchProducts(query = '', type = 'all', autoAdd = false) {
 }
 
 function addToCartMobile(device) {
-    // Check if device already in cart
-    let exists = cart.find(i => i.type === 'mobile' && i.device_id === device.id);
-    if (exists) {
-        alert('This mobile phone is already added to cart.');
-        return;
+    let isNew = (device.device_condition === 'new');
+    let maxStock = parseInt(device.available_stock || 1);
+
+    if (isNew) {
+        // NEW PHONE: Can be added more than once, cannot exceed available stock
+        let exists = cart.find(i => i.type === 'mobile' && i.device_id === device.id);
+        if (exists) {
+            if (exists.quantity + 1 > maxStock) {
+                alert('Cannot exceed available stock of ' + maxStock + ' for ' + device.model_name);
+                return;
+            }
+            exists.quantity += 1;
+        } else {
+            if (maxStock < 1) {
+                alert('No stock available for ' + device.model_name);
+                return;
+            }
+            cart.push({
+                type: 'mobile',
+                condition: 'new',
+                device_id: device.id,
+                name: device.model_name,
+                imei: 'NEW',
+                price: parseFloat(device.selling_price),
+                quantity: 1,
+                discount: 0,
+                maxQty: maxStock
+            });
+        }
+    } else {
+        // USED PHONE: Single unit only with unique inspected IMEI
+        let exists = cart.find(i => i.type === 'mobile' && i.device_id === device.id);
+        if (exists) {
+            alert('This used mobile phone (IMEI: ' + (device.imei_1 || '') + ') is already added to cart. Used phones are unique units and cannot be added more than once.');
+            return;
+        }
+        cart.push({
+            type: 'mobile',
+            condition: 'used',
+            device_id: device.id,
+            name: device.model_name,
+            imei: device.imei_1,
+            price: parseFloat(device.selling_price),
+            quantity: 1,
+            discount: 0,
+            maxQty: 1
+        });
     }
-    cart.push({
-        type: 'mobile',
-        device_id: device.id,
-        name: device.model_name,
-        imei: device.imei_1,
-        price: parseFloat(device.selling_price),
-        quantity: 1,
-        discount: 0,
-        maxQty: 1
-    });
     renderCart();
 }
 
@@ -449,11 +510,13 @@ function removeFromCart(index) {
 
 function updateQty(index, delta) {
     let item = cart[index];
-    if (item.type === 'mobile') return;
+    // Used phones are locked to quantity 1
+    if (item.type === 'mobile' && item.condition === 'used') return;
+
     let newQty = item.quantity + delta;
     if (newQty <= 0) {
         removeFromCart(index);
-    } else if (newQty > item.maxQty) {
+    } else if (item.maxQty && newQty > item.maxQty) {
         alert('Maximum available stock is ' + item.maxQty);
     } else {
         item.quantity = newQty;
@@ -476,14 +539,25 @@ function renderCart() {
         `);
     } else {
         cart.forEach((item, idx) => {
-            let imeiHtml = item.imei ? `<div class="font-monospace text-muted" style="font-size:0.7rem;">IMEI: ${item.imei}</div>` : '';
-            let qtyHtml = item.type === 'mobile'
-                ? `<span class="badge bg-light text-dark border">1</span>`
-                : `<div class="d-flex align-items-center justify-content-center gap-1">
-                     <button class="btn btn-xs btn-outline-secondary p-0" style="width:20px;height:20px;" onclick="updateQty(${idx}, -1)">-</button>
-                     <span class="small fw-bold px-1">${item.quantity}</span>
-                     <button class="btn btn-xs btn-outline-secondary p-0" style="width:20px;height:20px;" onclick="updateQty(${idx}, 1)">+</button>
-                   </div>`;
+            let imeiHtml = '';
+            if (item.type === 'mobile') {
+                if (item.condition === 'used' && item.imei) {
+                    imeiHtml = `<div class="font-monospace text-muted" style="font-size:0.7rem;"><i class="bi bi-upc"></i> IMEI: ${item.imei}</div>`;
+                } else {
+                    imeiHtml = `<div class="small text-primary" style="font-size:0.7rem;"><i class="bi bi-stars"></i> Box Pack (New)</div>`;
+                }
+            }
+
+            let qtyHtml = '';
+            if (item.type === 'mobile' && item.condition === 'used') {
+                qtyHtml = `<span class="badge bg-light text-dark border" title="Used phone (Unique IMEI)">1</span>`;
+            } else {
+                qtyHtml = `<div class="d-flex align-items-center justify-content-center gap-1">
+                             <button class="btn btn-xs btn-outline-secondary p-0" style="width:20px;height:20px;" onclick="updateQty(${idx}, -1)">-</button>
+                             <span class="small fw-bold px-1">${item.quantity}</span>
+                             <button class="btn btn-xs btn-outline-secondary p-0" style="width:20px;height:20px;" onclick="updateQty(${idx}, 1)">+</button>
+                           </div>`;
+            }
 
             let lineTotal = (item.price * item.quantity) - item.discount;
 
@@ -540,16 +614,34 @@ function calculateTotals() {
 
     $('#summary-grand-total').text('Rs. ' + grandTotal.toLocaleString(undefined, {minimumFractionDigits: 2}));
 
+    // Auto-fill paid amount for Walk-in Customer if not manually edited by user
+    let customerId = parseInt($('#pos-customer').val()) || 1;
+    let customerText = $('#pos-customer option:selected').text();
+    let isWalkIn = customerId === 1 || customerText.toLowerCase().includes('walk-in');
+
+    let $paidInput = $('#pos-paid-amount');
+    if (isWalkIn && (!$paidInput.data('user-edited') || $paidInput.val() === '')) {
+        $paidInput.val(grandTotal > 0 ? grandTotal : '');
+    }
+
     // Update remaining balance or change
-    let paid = parseFloat($('#pos-paid-amount').val()) || 0;
+    let paid = parseFloat($paidInput.val()) || 0;
     let diff = paid - grandTotal;
 
-    if (diff >= 0) {
+    if (diff >= -0.01) {
         $('#balance-label').text('Change Due:');
-        $('#summary-change-due').text('Rs. ' + diff.toLocaleString(undefined, {minimumFractionDigits: 2})).removeClass('text-danger').addClass('text-success');
+        $('#summary-change-due').text('Rs. ' + Math.max(0, diff).toLocaleString(undefined, {minimumFractionDigits: 2})).removeClass('text-danger').addClass('text-success');
+        $('#walkin-credit-warning').addClass('d-none');
     } else {
-        $('#balance-label').text('Customer Remaining Due:');
-        $('#summary-change-due').text('Rs. ' + Math.abs(diff).toLocaleString(undefined, {minimumFractionDigits: 2})).removeClass('text-success').addClass('text-danger');
+        if (isWalkIn) {
+            $('#balance-label').text('Shortage (No Credit Allowed):');
+            $('#summary-change-due').text('Rs. ' + Math.abs(diff).toLocaleString(undefined, {minimumFractionDigits: 2})).removeClass('text-success').addClass('text-danger');
+            $('#walkin-credit-warning').removeClass('d-none');
+        } else {
+            $('#balance-label').text('Customer Remaining Due:');
+            $('#summary-change-due').text('Rs. ' + Math.abs(diff).toLocaleString(undefined, {minimumFractionDigits: 2})).removeClass('text-success').addClass('text-danger');
+            $('#walkin-credit-warning').addClass('d-none');
+        }
     }
 }
 
@@ -570,8 +662,27 @@ $(document).on('click', '.quick-cash', function() {
     calculateTotals();
 });
 
+// Quick cash tracks manual input
+$(document).on('click', '.quick-cash', function() {
+    $('#pos-paid-amount').data('user-edited', true);
+});
+
+$('#pos-paid-amount').on('input', function() {
+    $(this).data('user-edited', true);
+    calculateTotals();
+});
+
+$('#pos-customer').on('change', function() {
+    let customerId = parseInt($(this).val()) || 1;
+    let isWalkIn = customerId === 1 || $(this).find('option:selected').text().toLowerCase().includes('walk-in');
+    if (isWalkIn) {
+        $('#pos-paid-amount').removeData('user-edited');
+    }
+    calculateTotals();
+});
+
 // Realtime listeners
-$('#pos-invoice-discount, #pos-paid-amount').on('input', calculateTotals);
+$('#pos-invoice-discount').on('input', calculateTotals);
 
 // Search input
 let searchTimeout;
@@ -664,6 +775,24 @@ $('#btn-save-quick-customer').on('click', function() {
 $('#pos-btn-checkout').on('click', function() {
     if (cart.length === 0) {
         alert('Please add at least one product to the cart.');
+        return;
+    }
+
+    let customerId = parseInt($('#pos-customer').val()) || 1;
+    let customerText = $('#pos-customer option:selected').text();
+    let isWalkIn = customerId === 1 || customerText.toLowerCase().includes('walk-in');
+
+    let subtotal = 0;
+    cart.forEach(item => { subtotal += (item.price * item.quantity) - item.discount; });
+    let discount = parseFloat($('#pos-invoice-discount').val()) || 0;
+    let tax = (taxEnabled && taxRate > 0) ? Math.max(0, subtotal - discount) * (taxRate / 100) : 0;
+    let tradeInVal = tradeInItem ? parseFloat(tradeInItem.value) : 0;
+    let grandTotal = Math.max(0, subtotal - discount + tax - tradeInVal);
+    let paidAmount = parseFloat($('#pos-paid-amount').val()) || 0;
+
+    if (isWalkIn && (paidAmount < grandTotal - 0.01)) {
+        alert('Credit sale is not allowed for Walk-in Customer. Full payment of Rs. ' + grandTotal.toLocaleString(undefined, {minimumFractionDigits: 2}) + ' is required. Please collect full payment or select a registered customer account.');
+        $('#pos-paid-amount').focus();
         return;
     }
 

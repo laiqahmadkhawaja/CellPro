@@ -303,11 +303,15 @@ $(document).on('input', '.acc-cost, .acc-qty, #acc-discount', calcAccTotals);
 
 $('#btn-add-acc-row').on('click', function() {
     let row = $('#acc-tbody tr:first').clone();
-    row.find('select').val('');
+    row.find('.select2-container').remove();
+    row.find('select').removeClass('select2-hidden-accessible').removeAttr('data-select2-id').val('');
     row.find('.acc-cost').val('');
     row.find('.acc-qty').val('10');
     row.find('.acc-linetotal').text('Rs. 0.00');
     $('#acc-tbody').append(row);
+    if (typeof initSearchableSelects === 'function') {
+        initSearchableSelects(row);
+    }
 });
 
 $(document).on('click', '.btn-remove-acc', function() {

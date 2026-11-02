@@ -46,7 +46,17 @@ foreach ($expense_rows as $r) $total_expenses += ((float)$r['tot_debit'] - (floa
 $net_profit = $gross_profit - $total_expenses;
 ?>
 
-<div class="d-flex justify-content-between align-items-center mb-3">
+<?= renderPrintHeader(
+    'INCOME STATEMENT (PROFIT & LOSS)',
+    'Financial Performance & Net Earnings',
+    [
+        'Period' => formatDate($date_from) . ' to ' . formatDate($date_to),
+        'Net Sales Revenue' => formatCurrency($total_income ?? 0),
+        'Net Operating Profit' => formatCurrency($net_profit ?? 0)
+    ]
+) ?>
+
+<div class="d-flex justify-content-between align-items-center mb-3 no-print">
     <div>
         <h5 class="fw-bold m-0"><i class="bi bi-graph-up-arrow text-success me-2"></i>Profit & Loss Statement (Income Statement)</h5>
         <small class="text-muted">For period <?= formatDate($date_from) ?> to <?= formatDate($date_to) ?></small>
@@ -176,5 +186,8 @@ $net_profit = $gross_profit - $total_expenses;
         </table>
     </div>
 </div>
+
+<?= renderPrintSignatures(['Prepared By (Accountant)', 'Finance Controller', 'Managing Director']) ?>
+<?= renderPrintFooter('Statement of Profit & Loss prepared in accordance with accrual accounting principles.') ?>
 
 <?php require_once __DIR__ . '/../includes/footer.php'; ?>

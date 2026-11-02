@@ -17,18 +17,28 @@
     --cp-header-height: 64px;
 }
 
+html, body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+}
+
 body {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     background-color: var(--cp-bg);
     color: var(--cp-text-main);
-    min-height: 100vh;
-    overflow-x: hidden;
+    height: 100vh;
+    height: 100dvh;
+    overflow: hidden;
 }
 
 /* Layout */
 #app-wrapper {
     display: flex;
-    min-height: 100vh;
+    height: 100vh;
+    height: 100dvh;
+    width: 100%;
+    overflow: hidden;
 }
 
 #sidebar {
@@ -36,17 +46,44 @@ body {
     background: #0f172a;
     color: #e2e8f0;
     flex-shrink: 0;
-    transition: all 0.3s ease;
-    z-index: 1040;
+    height: 100vh;
+    height: 100dvh;
     display: flex;
     flex-direction: column;
+    overflow: hidden;
+    z-index: 1040;
+    transition: all 0.3s ease;
 }
 
 #main-content {
     flex-grow: 1;
     min-width: 0;
+    height: 100vh;
+    height: 100dvh;
+    overflow-y: auto;
+    overflow-x: hidden;
     display: flex;
     flex-direction: column;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+    scrollbar-color: #cbd5e1 transparent;
+}
+
+#main-content::-webkit-scrollbar {
+    width: 6px;
+}
+
+#main-content::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+#main-content::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 4px;
+}
+
+#main-content::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
 }
 
 .top-navbar {
@@ -60,6 +97,7 @@ body {
     position: sticky;
     top: 0;
     z-index: 1020;
+    flex-shrink: 0;
 }
 
 .page-container {
@@ -77,6 +115,7 @@ body {
     align-items: center;
     gap: 0.75rem;
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    flex-shrink: 0;
 }
 
 .sidebar-nav {
@@ -84,7 +123,28 @@ body {
     padding: 0.75rem 0.5rem;
     margin: 0;
     overflow-y: auto;
+    overflow-x: hidden;
     flex-grow: 1;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+}
+
+.sidebar-nav::-webkit-scrollbar {
+    width: 5px;
+}
+
+.sidebar-nav::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.sidebar-nav::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 4px;
+}
+
+.sidebar-nav::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.35);
 }
 
 .sidebar-nav .nav-header {
@@ -259,28 +319,119 @@ body {
     gap: 0.75rem;
 }
 
-/* POS Terminal Specific */
+/* POS Terminal Card Redesign */
 .pos-product-card {
-    border: 1px solid var(--cp-border);
-    border-radius: 0.5rem;
-    padding: 0.75rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 0.875rem;
+    padding: 0.85rem 0.95rem;
     background: #ffffff;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
     height: 100%;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+    position: relative;
+    overflow: hidden;
 }
 
 .pos-product-card:hover {
-    border-color: var(--cp-primary);
-    box-shadow: 0 4px 6px -1px rgba(30, 64, 175, 0.1);
-    transform: translateY(-2px);
+    border-color: #3b82f6;
+    box-shadow: 0 8px 18px -4px rgba(59, 130, 246, 0.16);
+    transform: translateY(-3px);
 }
 
 .pos-product-card.is-device {
-    border-left: 3px solid #0284c7;
+    background: linear-gradient(180deg, #ffffff 0%, #fcfdfe 100%);
+    border-top: 3px solid #3b82f6;
+}
+
+.pos-product-card.is-device.is-used {
+    border-top: 3px solid #f59e0b;
+}
+
+.pos-product-card .card-badge-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.35rem;
+    margin-bottom: 0.65rem;
+    width: 100%;
+}
+
+.pos-product-card .card-badge-row .badge {
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.pos-product-card .card-title {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: #1e293b;
+    margin-bottom: 0.3rem;
+    line-height: 1.25;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.pos-product-card .card-specs {
+    font-size: 0.75rem;
+    color: #64748b;
+    margin-bottom: 0.35rem;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    flex-wrap: wrap;
+}
+
+.pos-product-card .card-imei {
+    font-size: 0.7rem;
+    color: #94a3b8;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.pos-product-card .card-footer-row {
+    margin-top: 0.75rem;
+    padding-top: 0.65rem;
+    border-top: 1px dashed #e2e8f0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.pos-product-card .card-price {
+    font-size: 0.95rem;
+    font-weight: 800;
+    color: #1e40af;
+    letter-spacing: -0.01em;
+}
+
+.pos-product-card .card-add-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #3b82f6;
+    color: #ffffff;
+    border: none;
+    box-shadow: 0 2px 4px rgba(59, 130, 246, 0.3);
+    transition: all 0.15s ease;
+}
+
+.pos-product-card:hover .card-add-btn {
+    background: #1d4ed8;
+    transform: scale(1.08);
 }
 
 .pos-cart-table {
@@ -308,7 +459,10 @@ body {
     #sidebar {
         position: fixed;
         left: -260px;
+        top: 0;
+        bottom: 0;
         height: 100vh;
+        height: 100dvh;
     }
     #sidebar.show {
         left: 0;
@@ -321,18 +475,288 @@ body {
     }
 }
 
-/* Print Styles */
+/* Print Styles - Universal High-Definition ERP Document Printing */
 @media print {
-    #sidebar, .top-navbar, .no-print, .btn, .flash-messages-container {
-        display: none !important;
+    @page {
+        size: A4 portrait;
+        margin: 10mm 12mm 12mm 12mm;
     }
-    body, #app-wrapper, #main-content, .page-container {
+
+    * {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+        color-adjust: exact !important;
+    }
+
+    html, body {
         background: #ffffff !important;
+        color: #0f172a !important;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
+        font-size: 10pt !important;
+        line-height: 1.4 !important;
+        height: auto !important;
+        min-height: auto !important;
+        overflow: visible !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        width: 100% !important;
+    }
+
+    #app-wrapper, #main-content, .page-container {
+        display: block !important;
+        height: auto !important;
+        min-height: auto !important;
+        overflow: visible !important;
         padding: 0 !important;
         margin: 0 !important;
+        background: transparent !important;
+        width: 100% !important;
     }
+
+    /* Hide Navigation, Controls, Sidebars, Actions, and Web Elements */
+    #sidebar,
+    .top-navbar,
+    footer,
+    .no-print,
+    .btn,
+    button,
+    .dropdown,
+    .dropdown-menu,
+    .side-panel,
+    .side-panel-overlay,
+    .flash-messages-container,
+    .breadcrumb,
+    .pagination,
+    .nav-tabs,
+    .nav-pills,
+    input[type="search"],
+    .dataTables_filter,
+    .dataTables_length,
+    .dataTables_paginate,
+    .dataTables_info,
+    .badge.bg-light.text-dark.border {
+        display: none !important;
+    }
+
+    /* Typography & Clean Links */
+    a {
+        text-decoration: none !important;
+        color: inherit !important;
+    }
+    a[href]:after {
+        content: none !important;
+    }
+
+    /* Print Document Header */
+    .print-document-header {
+        display: block !important;
+        margin-bottom: 14px !important;
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
+    }
+    .print-document-header .biz-brand {
+        font-size: 18pt !important;
+        font-weight: 800 !important;
+        color: #0f172a !important;
+        line-height: 1.1 !important;
+    }
+    .print-document-header .biz-sub {
+        font-size: 8.5pt !important;
+        color: #475569 !important;
+        margin-top: 2px !important;
+    }
+    .print-document-header .doc-title-badge {
+        font-size: 13pt !important;
+        font-weight: 800 !important;
+        letter-spacing: 0.5px !important;
+        color: #0f172a !important;
+        line-height: 1.1 !important;
+    }
+    .print-document-header .doc-meta {
+        font-size: 8pt !important;
+        color: #475569 !important;
+        line-height: 1.3 !important;
+    }
+
+    /* Grid Layout in Print: Keep columns side-by-side */
+    .row {
+        display: flex !important;
+        flex-wrap: wrap !important;
+        margin-right: -6px !important;
+        margin-left: -6px !important;
+    }
+    .row > [class*="col-"] {
+        padding-right: 6px !important;
+        padding-left: 6px !important;
+    }
+    .col-md-6, .col-6, .col-sm-6 {
+        flex: 0 0 auto !important;
+        width: 50% !important;
+    }
+    .col-md-4, .col-4 {
+        flex: 0 0 auto !important;
+        width: 33.333333% !important;
+    }
+    .col-md-3, .col-3 {
+        flex: 0 0 auto !important;
+        width: 25% !important;
+    }
+    .col-md-8, .col-8 {
+        flex: 0 0 auto !important;
+        width: 66.666667% !important;
+    }
+    .col-md-12, .col-12 {
+        flex: 0 0 auto !important;
+        width: 100% !important;
+    }
+
+    /* Structured Cards for Print (Crisp, Neat Boxes) */
     .card {
-        border: none !important;
+        border: 1px solid #cbd5e1 !important;
+        border-radius: 6px !important;
         box-shadow: none !important;
+        background: #ffffff !important;
+        margin-bottom: 12px !important;
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
     }
+    .card-header {
+        background-color: #f8fafc !important;
+        border-bottom: 1px solid #cbd5e1 !important;
+        font-weight: 700 !important;
+        font-size: 9pt !important;
+        color: #0f172a !important;
+        padding: 6px 10px !important;
+    }
+    .card-body {
+        padding: 8px 10px !important;
+        font-size: 8.5pt !important;
+    }
+
+    /* Tables in Print: Formal, Crisp, Header-repeated */
+    .table-responsive {
+        overflow: visible !important;
+    }
+    .table {
+        width: 100% !important;
+        border-collapse: collapse !important;
+        margin-bottom: 12px !important;
+        font-size: 8.5pt !important;
+        color: #0f172a !important;
+    }
+    .table thead {
+        display: table-header-group !important;
+    }
+    .table thead th {
+        background-color: #f1f5f9 !important;
+        color: #0f172a !important;
+        font-weight: 700 !important;
+        text-transform: uppercase !important;
+        font-size: 7.5pt !important;
+        letter-spacing: 0.3px !important;
+        border: 1px solid #cbd5e1 !important;
+        padding: 5px 6px !important;
+    }
+    .table tbody td {
+        border: 1px solid #e2e8f0 !important;
+        padding: 5px 6px !important;
+        vertical-align: middle !important;
+    }
+    .table tfoot {
+        display: table-footer-group !important;
+    }
+    .table tfoot td {
+        border: 1px solid #cbd5e1 !important;
+        padding: 6px 8px !important;
+        background-color: #f8fafc !important;
+        font-weight: 600 !important;
+    }
+    .table tr {
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
+    }
+
+    /* Badges in Print */
+    .badge {
+        border: 1px solid #0f172a !important;
+        padding: 2px 5px !important;
+        font-size: 7pt !important;
+        font-weight: 700 !important;
+        border-radius: 3px !important;
+        text-transform: uppercase !important;
+        background: transparent !important;
+        color: #0f172a !important;
+    }
+
+    /* Formal Document Signatures */
+    .print-signatures-block {
+        display: flex !important;
+        justify-content: space-between !important;
+        margin-top: 30px !important;
+        padding-top: 10px !important;
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
+    }
+    .print-signature-col {
+        width: 28% !important;
+        text-align: center !important;
+        font-size: 8pt !important;
+        color: #1e293b !important;
+    }
+    .print-signature-line {
+        border-top: 1px dashed #64748b !important;
+        margin-bottom: 4px !important;
+    }
+
+    /* Formal Document Footer */
+    .print-document-footer {
+        display: block !important;
+        margin-top: 20px !important;
+        padding-top: 6px !important;
+        border-top: 1px solid #cbd5e1 !important;
+        font-size: 7.5pt !important;
+        color: #64748b !important;
+        text-align: center !important;
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
+    }
+}
+
+/* Select2 Bootstrap 5 Integration & Tweaks */
+.select2-container--bootstrap-5 .select2-selection {
+    min-height: 31px;
+    padding: 0.25rem 0.5rem;
+    font-size: 0.875rem;
+    border-radius: 0.375rem;
+    border-color: var(--cp-border);
+}
+
+.select2-container--bootstrap-5.select2-container--focus .select2-selection,
+.select2-container--bootstrap-5.select2-container--open .select2-selection {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 0.2rem rgba(59, 130, 246, 0.15);
+}
+
+.select2-container--bootstrap-5 .select2-dropdown {
+    border-color: var(--cp-border);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    border-radius: 0.5rem;
+    z-index: 2050;
+}
+
+.select2-container--bootstrap-5 .select2-search--dropdown .select2-search__field {
+    border-radius: 0.375rem;
+    border: 1px solid var(--cp-border);
+    padding: 0.35rem 0.65rem;
+    font-size: 0.85rem;
+}
+
+.select2-container--bootstrap-5 .select2-results__option--highlighted[aria-selected] {
+    background-color: var(--cp-primary);
+    color: #ffffff;
+}
+
+.select2-container--bootstrap-5 .select2-results__option {
+    font-size: 0.875rem;
+    padding: 0.45rem 0.75rem;
 }

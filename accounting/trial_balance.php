@@ -26,7 +26,17 @@ $total_debits = 0.00;
 $total_credits = 0.00;
 ?>
 
-<div class="d-flex justify-content-between align-items-center mb-3">
+<?= renderPrintHeader(
+    'TRIAL BALANCE STATEMENT',
+    'Mathematical Verification of General Ledger Balances',
+    [
+        'As of Date' => formatDate($date_as_of),
+        'Total Debits' => formatCurrency($tot_debit ?? 0),
+        'Total Credits' => formatCurrency($tot_credit ?? 0)
+    ]
+) ?>
+
+<div class="d-flex justify-content-between align-items-center mb-3 no-print">
     <div>
         <h5 class="fw-bold m-0"><i class="bi bi-bar-chart text-primary me-2"></i>Trial Balance</h5>
         <small class="text-muted">Verification of double-entry mathematical balance as of <?= formatDate($date_as_of) ?></small>
@@ -128,5 +138,8 @@ $total_credits = 0.00;
         </div>
     </div>
 </div>
+
+<?= renderPrintSignatures(['Accountant', 'Internal Auditor', 'Managing Partner']) ?>
+<?= renderPrintFooter('General Ledger Trial Balance verified for double-entry debit-credit equality.') ?>
 
 <?php require_once __DIR__ . '/../includes/footer.php'; ?>

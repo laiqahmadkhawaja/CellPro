@@ -121,6 +121,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($actual_paid > 0) {
             $pdo->prepare("UPDATE financial_accounts SET current_balance = current_balance + ? WHERE id = ?")
                 ->execute([$actual_paid, $payment_account_id]);
+
+            $pdo->prepare("INSERT INTO repair_payments (bill_id, branch_id, payment_date, account_id, amount, payment_method, notes, created_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?)")
+                ->execute([$bill_id, $branch_id, $repair_date, $payment_account_id, $actual_paid, $payment_method, "Initial payment on {$bill_no}", $_SESSION['user_id']]);
         }
 
         // Update customer balance if remaining due

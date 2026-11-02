@@ -3,8 +3,7 @@ Options -Indexes
 
 # Protect sensitive database & config files
 <FilesMatch "^(schema\.sql|database\.php|\.env)">
-    Order allow,deny
-    Deny from all
+    Require all denied
 </FilesMatch>
 
 # Set UTF-8 encoding

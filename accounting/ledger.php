@@ -61,7 +61,17 @@ $stmt->execute($params);
 $lines = $stmt->fetchAll();
 ?>
 
-<div class="d-flex justify-content-between align-items-center mb-3">
+<?= renderPrintHeader(
+    'GENERAL LEDGER STATEMENT',
+    'Chronological Account Journal Postings & Running Balance',
+    [
+        'Account' => ($account['code'] ?? '') . ' - ' . ($account['name'] ?? ''),
+        'Category' => strtoupper($account['type'] ?? ''),
+        'Current Balance' => formatCurrency($account['current_balance'] ?? 0)
+    ]
+) ?>
+
+<div class="d-flex justify-content-between align-items-center mb-3 no-print">
     <div>
         <h5 class="fw-bold m-0"><i class="bi bi-journal-album text-primary me-2"></i>General Ledger Statement</h5>
         <small class="text-muted"><?= htmlspecialchars($account['code']) ?> - <?= htmlspecialchars($account['name']) ?> (<?= htmlspecialchars($account['group_name']) ?>)</small>
@@ -178,5 +188,8 @@ $lines = $stmt->fetchAll();
         </div>
     </div>
 </div>
+
+<?= renderPrintSignatures(['Prepared By', 'Accountant', 'Verified By']) ?>
+<?= renderPrintFooter('General Ledger account transaction statement verified against primary journal vouchers.') ?>
 
 <?php require_once __DIR__ . '/../includes/footer.php'; ?>

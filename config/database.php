@@ -4,7 +4,7 @@
 
 $db_host = '127.0.0.1';
 $db_port = '3306';
-$db_name = 'cellpro_db';
+$db_name = 'cellpro';
 $db_user = 'root';
 $db_pass = '';
 
@@ -20,9 +20,24 @@ $options = [
 try {
     $pdo = new PDO($dsn, $db_user, $db_pass, $options);
 } catch (PDOException $e) {
-    error_log("Database connection failed: " . $e->getMessage());
-    die("<div style='font-family:sans-serif;padding:30px;background:#fff1f0;border:1px solid #ffa39e;margin:20px;border-radius:8px;'>
-        <h3 style='color:#cf1322;margin-top:0;'>Database Connection Error</h3>
-        <p>Could not connect to MySQL. Please verify that MySQL service is running in XAMPP and database <code>{$db_name}</code> exists.</p>
-    </div>");
+    // If 'cellpro' fails, try fallback to 'cellpro_db'
+    if ($db_name === 'cellpro') {
+        try {
+            $fallback_dsn = "mysql:host={$db_host};port={$db_port};dbname=cellpro_db;charset=utf8mb4";
+            $pdo = new PDO($fallback_dsn, $db_user, $db_pass, $options);
+            $db_name = 'cellpro_db';
+        } catch (PDOException $e2) {
+            error_log("Database connection failed: " . $e2->getMessage());
+            die("<div style='font-family:sans-serif;padding:30px;background:#fff1f0;border:1px solid #ffa39e;margin:20px;border-radius:8px;'>
+                <h3 style='color:#cf1322;margin-top:0;'>Database Connection Error</h3>
+                <p>Could not connect to MySQL. Please verify that MySQL service is running in WampServer/XAMPP and database <code>{$db_name}</code> exists.</p>
+            </div>");
+        }
+    } else {
+        error_log("Database connection failed: " . $e->getMessage());
+        die("<div style='font-family:sans-serif;padding:30px;background:#fff1f0;border:1px solid #ffa39e;margin:20px;border-radius:8px;'>
+            <h3 style='color:#cf1322;margin-top:0;'>Database Connection Error</h3>
+            <p>Could not connect to MySQL. Please verify that MySQL service is running in WampServer/XAMPP and database <code>{$db_name}</code> exists.</p>
+        </div>");
+    }
 }

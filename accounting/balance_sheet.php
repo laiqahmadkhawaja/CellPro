@@ -62,7 +62,17 @@ $total_equity = $total_equity_base + $retained_profit;
 $total_liabilities_equity = $total_liabilities + $total_equity;
 ?>
 
-<div class="d-flex justify-content-between align-items-center mb-3">
+<?= renderPrintHeader(
+    'STATEMENT OF FINANCIAL POSITION',
+    'Balance Sheet & Capital Adequacy',
+    [
+        'As of Date' => formatDate($as_of_date),
+        'Total Assets' => formatCurrency($total_assets ?? 0),
+        'Total Liabilities & Equity' => formatCurrency(($total_liabilities ?? 0) + ($total_equity_with_pnl ?? 0))
+    ]
+) ?>
+
+<div class="d-flex justify-content-between align-items-center mb-3 no-print">
     <div>
         <h5 class="fw-bold m-0"><i class="bi bi-pie-chart text-primary me-2"></i>Statement of Financial Position (Balance Sheet)</h5>
         <small class="text-muted">As of <?= formatDate($as_of_date) ?></small>
@@ -169,5 +179,8 @@ $total_liabilities_equity = $total_liabilities + $total_equity;
         </table>
     </div>
 </div>
+
+<?= renderPrintSignatures(['Prepared By (Accountant)', 'Verified By (Auditor)', 'Director / Proprietor']) ?>
+<?= renderPrintFooter('Certified Statement of Financial Position generated from Double-Entry General Ledger.') ?>
 
 <?php require_once __DIR__ . '/../includes/footer.php'; ?>

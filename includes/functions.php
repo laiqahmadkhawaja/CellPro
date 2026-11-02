@@ -163,3 +163,65 @@ function getStatusBadge($status) {
     $label = ucwords(str_replace('_', ' ', $status));
     return '<span class="badge bg-' . $color . '">' . htmlspecialchars($label) . '</span>';
 }
+
+function renderPrintHeader($docTitle, $docSubtitle = '', $metaList = [], $branchId = null) {
+    global $pdo;
+    $bizName = getSetting('business_name', 'CellPro Mobile World');
+    $bId = $branchId ?: getActiveBranchId();
+    $branch = $pdo ? getActiveBranchInfo($pdo, $bId) : null;
+    $branchName = $branch['name'] ?? 'Main Branch';
+    $branchAddr = $branch['address'] ?? '';
+    $branchPhone = $branch['phone'] ?? '';
+
+    $html = '<div class="print-document-header d-none d-print-block mb-3">';
+    $html .= '<div class="row align-items-start g-2">';
+    $html .= '<div class="col-7">';
+    $html .= '<div class="biz-brand fs-4 fw-bold text-dark">' . htmlspecialchars($bizName) . '</div>';
+    $html .= '<div class="biz-sub small text-muted">';
+    $html .= '<strong>' . htmlspecialchars($branchName) . '</strong>';
+    if ($branchAddr) $html .= ' &bull; ' . htmlspecialchars($branchAddr);
+    if ($branchPhone) $html .= '<br>Phone: ' . htmlspecialchars($branchPhone);
+    $html .= '</div>';
+    $html .= '</div>';
+
+    $html .= '<div class="col-5 text-end">';
+    $html .= '<div class="doc-title-badge fs-5 fw-bold text-uppercase text-dark">' . htmlspecialchars($docTitle) . '</div>';
+    if ($docSubtitle) {
+        $html .= '<div class="small text-muted fw-semibold">' . htmlspecialchars($docSubtitle) . '</div>';
+    }
+    $html .= '<div class="doc-meta small text-muted mt-1">';
+    foreach ($metaList as $k => $v) {
+        $html .= '<div>' . htmlspecialchars($k) . ': <strong class="text-dark">' . htmlspecialchars($v) . '</strong></div>';
+    }
+    $html .= '<div class="text-secondary" style="font-size:0.75rem;">Printed: ' . date('d M Y, h:i A') . '</div>';
+    $html .= '</div>';
+    $html .= '</div>';
+    $html .= '</div>';
+    $html .= '<hr class="my-2 border-dark border-2 opacity-75">';
+    $html .= '</div>';
+
+    return $html;
+}
+
+function renderPrintSignatures($signatures = ['Prepared / Received By', 'Verified By', 'Authorized Signatory']) {
+    $html = '<div class="print-signatures-block d-none d-print-flex justify-content-between mt-5 pt-4">';
+    foreach ($signatures as $s) {
+        $html .= '<div class="print-signature-col text-center" style="width: 28%;">';
+        $html .= '<div class="print-signature-line border-top border-dark border-1 mb-1 pt-1"></div>';
+        $html .= '<div class="small fw-semibold text-dark">' . htmlspecialchars($s) . '</div>';
+        $html .= '</div>';
+    }
+    $html .= '</div>';
+    return $html;
+}
+
+function renderPrintFooter($note = '') {
+    $userName = $_SESSION['user_name'] ?? 'System Administrator';
+    $html = '<div class="print-document-footer d-none d-print-block mt-4 pt-2 border-top text-center text-muted small" style="font-size: 0.75rem;">';
+    if ($note) {
+        $html .= '<div class="mb-1 text-dark fst-italic">' . nl2br(htmlspecialchars($note)) . '</div>';
+    }
+    $html .= '<div>CellPro ERP &mdash; Multi-Branch Mobile Shop Management System &bull; Printed by ' . htmlspecialchars($userName) . '</div>';
+    $html .= '</div>';
+    return $html;
+}

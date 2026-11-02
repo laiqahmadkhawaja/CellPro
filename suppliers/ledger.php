@@ -151,7 +151,17 @@ foreach ($transactions as &$t) {
 unset($t);
 ?>
 
-<div class="d-flex justify-content-between align-items-center mb-3">
+<?= renderPrintHeader(
+    'SUPPLIER STATEMENT OF ACCOUNT',
+    'Vendor Ledger & Payment History',
+    [
+        'Supplier' => $supplier['name'],
+        'Contact' => $supplier['contact_person'] ?: $supplier['phone'],
+        'Current Balance Owed' => formatCurrency($supplier['current_balance'])
+    ]
+) ?>
+
+<div class="d-flex justify-content-between align-items-center mb-3 no-print">
     <div>
         <h5 class="fw-bold m-0"><i class="bi bi-truck text-primary me-2"></i>Supplier Ledger: <?= htmlspecialchars($supplier['name']) ?></h5>
         <small class="text-muted">Contact: <?= htmlspecialchars($supplier['contact_person'] ?: $supplier['phone']) ?> &bull; Current Payable: <span class="fw-bold text-primary"><?= formatCurrency($supplier['current_balance']) ?></span></small>

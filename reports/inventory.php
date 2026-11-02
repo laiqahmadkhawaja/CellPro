@@ -47,7 +47,17 @@ $stmt->execute();
 $accessories = $stmt->fetchAll();
 ?>
 
-<div class="d-flex justify-content-between align-items-center mb-3">
+<?= renderPrintHeader(
+    'INVENTORY VALUATION REPORT',
+    'Physical Stock On-Hand Valuation at Cost and Projected Retail',
+    [
+        'Valuation Date' => date('d M Y'),
+        'Mobile Devices' => $mobile_val['total_devices'] . ' Units',
+        'Total Stock Value' => formatCurrency($grand_cost_valuation)
+    ]
+) ?>
+
+<div class="d-flex justify-content-between align-items-center mb-3 no-print">
     <div>
         <h5 class="fw-bold m-0"><i class="bi bi-boxes text-primary me-2"></i>Inventory Valuation Report</h5>
         <small class="text-muted">Current inventory on hand at cost value and projected retail realization</small>

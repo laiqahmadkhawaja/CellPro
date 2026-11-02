@@ -66,24 +66,70 @@ try {
                 throw new Exception("Mobile phone '{$item['name']}' (IMEI: {$item['imei']}) is no longer available in this branch.");
             }
 
-            $cost = (float)$device['actual_cost'];
-            $line_total = ($price * 1) - $discount;
-            $subtotal += $line_total;
-            $total_cogs_mobile += $cost;
+            if ($device['device_condition'] === 'used') {
+                $qty = 1;
+                $cost = (float)$device['actual_cost'];
+                $line_total = ($price * 1) - $discount;
+                $subtotal += $line_total;
+                $total_cogs_mobile += $cost;
 
-            $validated_items[] = [
-                'type' => 'mobile',
-                'product_id' => null,
-                'device_id' => $device['id'],
-                'name' => $device['model_name'],
-                'imei' => $device['imei_1'],
-                'quantity' => 1,
-                'unit_cost' => $cost,
-                'unit_price' => $price,
-                'discount' => $discount,
-                'total_price' => $line_total,
-                'gross_profit' => $line_total - $cost
-            ];
+                $validated_items[] = [
+                    'type' => 'mobile',
+                    'condition' => 'used',
+                    'product_id' => null,
+                    'device_id' => $device['id'],
+                    'device_ids' => [$device['id']],
+                    'name' => $device['model_name'],
+                    'imei' => $device['imei_1'],
+                    'quantity' => 1,
+                    'unit_cost' => $cost,
+                    'unit_price' => $price,
+                    'discount' => $discount,
+                    'total_price' => $line_total,
+                    'gross_profit' => $line_total - $cost
+                ];
+            } else {
+                // New phone: match available stock of this model in this branch
+                $stockStmt = $pdo->prepare("SELECT id, actual_cost, imei_1 FROM mobile_devices 
+                    WHERE branch_id = ? AND device_status = 'available' AND device_condition = 'new' AND model_name = ?
+                    LIMIT ? FOR UPDATE");
+                $stockStmt->bindValue(1, $branch_id, PDO::PARAM_INT);
+                $stockStmt->bindValue(2, $device['model_name'], PDO::PARAM_STR);
+                $stockStmt->bindValue(3, $qty, PDO::PARAM_INT);
+                $stockStmt->execute();
+                $matchedDevices = $stockStmt->fetchAll();
+
+                if (count($matchedDevices) < $qty) {
+                    throw new Exception("Insufficient stock for new mobile '{$device['model_name']}'. Available: " . count($matchedDevices) . ", requested: {$qty}.");
+                }
+
+                $total_cost = 0;
+                $matched_ids = [];
+                foreach ($matchedDevices as $md) {
+                    $total_cost += (float)$md['actual_cost'];
+                    $matched_ids[] = (int)$md['id'];
+                }
+                $avg_cost = $total_cost / $qty;
+                $line_total = ($price * $qty) - $discount;
+                $subtotal += $line_total;
+                $total_cogs_mobile += $total_cost;
+
+                $validated_items[] = [
+                    'type' => 'mobile',
+                    'condition' => 'new',
+                    'product_id' => null,
+                    'device_id' => $device['id'],
+                    'device_ids' => $matched_ids,
+                    'name' => $device['model_name'],
+                    'imei' => 'NEW-PACK',
+                    'quantity' => $qty,
+                    'unit_cost' => $avg_cost,
+                    'unit_price' => $price,
+                    'discount' => $discount,
+                    'total_price' => $line_total,
+                    'gross_profit' => $line_total - $total_cost
+                ];
+            }
         } else {
             $product_id = (int)$item['product_id'];
             $prodStmt = $pdo->prepare("SELECT * FROM products WHERE id = ? AND branch_id = ? FOR UPDATE");
@@ -129,6 +175,16 @@ try {
     // If paid amount exceeds net payable, adjust paid to net payable (change returned to customer)
     $actual_paid = min($paid_amount, $net_payable);
     $remaining_balance = max(0, $net_payable - $actual_paid);
+
+    // Validate: No credit sale to walk-in customer
+    $custStmt = $pdo->prepare("SELECT id, name FROM customers WHERE id = ?");
+    $custStmt->execute([$customer_id]);
+    $customer_row = $custStmt->fetch();
+    $is_walk_in = (!$customer_row || $customer_row['id'] == 1 || stripos($customer_row['name'], 'walk-in') !== false);
+
+    if ($is_walk_in && $remaining_balance > 0.001) {
+        throw new Exception("Credit sales and partial payments are not allowed for Walk-in Customer. Full payment of Rs. " . number_format($net_payable, 2) . " is required. Please collect full payment or select a registered customer account.");
+    }
 
     $payment_status = 'paid';
     if ($remaining_balance > 0 && $actual_paid > 0) {
@@ -257,7 +313,13 @@ try {
 
         if ($vItem['type'] === 'mobile') {
             $revenue_mobile += $vItem['total_price'];
-            recordStockMovement($pdo, $branch_id, null, $vItem['device_id'], 'sale', -1, $vItem['unit_cost'], 'sale', $sale_id, "Sold in {$invoice_no}");
+            if (!empty($vItem['device_ids'])) {
+                foreach ($vItem['device_ids'] as $dId) {
+                    recordStockMovement($pdo, $branch_id, null, $dId, 'sale', -1, $vItem['unit_cost'], 'sale', $sale_id, "Sold in {$invoice_no}");
+                }
+            } else {
+                recordStockMovement($pdo, $branch_id, null, $vItem['device_id'], 'sale', -1, $vItem['unit_cost'], 'sale', $sale_id, "Sold in {$invoice_no}");
+            }
         } else {
             $revenue_accessory += $vItem['total_price'];
             recordStockMovement($pdo, $branch_id, $vItem['product_id'], null, 'sale', -$vItem['quantity'], $vItem['unit_cost'], 'sale', $sale_id, "Sold in {$invoice_no}");

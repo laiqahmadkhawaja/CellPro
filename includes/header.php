@@ -28,6 +28,9 @@ if (isset($_GET['switch_branch']) && isSuperAdmin()) {
     <!-- Local Vendor CSS -->
     <link rel="stylesheet" href="<?= BASE_URL ?>assets/vendor/bootstrap/bootstrap.min.css">
     <link rel="stylesheet" href="<?= BASE_URL ?>assets/vendor/bootstrap-icons/bootstrap-icons.css">
+    <!-- Select2 Searchable Dropdown CSS -->
+    <link rel="stylesheet" href="<?= BASE_URL ?>assets/vendor/select2/select2.min.css">
+    <link rel="stylesheet" href="<?= BASE_URL ?>assets/vendor/select2/select2-bootstrap-5-theme.min.css">
     <!-- Custom Application CSS -->
     <link rel="stylesheet" href="<?= BASE_URL ?>assets/css/style.css">
     <!-- Local jQuery -->

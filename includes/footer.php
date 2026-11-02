@@ -17,6 +17,7 @@
 <!-- Local Vendor Scripts -->
 <script src="<?= BASE_URL ?>assets/vendor/bootstrap/bootstrap.bundle.min.js"></script>
 <script src="<?= BASE_URL ?>assets/vendor/chartjs/chart.umd.min.js"></script>
+<script src="<?= BASE_URL ?>assets/vendor/select2/select2.min.js"></script>
 <script src="<?= BASE_URL ?>assets/js/app.js"></script>
 
 </body>

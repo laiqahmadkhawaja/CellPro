@@ -17,7 +17,35 @@ $results = [
 
 // 1. Search Available Mobile Phones by IMEI, Serial, Model, Brand
 if ($type === 'all' || $type === 'mobile') {
-    $sql = "SELECT md.*, b.name as brand_name, br.name as branch_name 
+    $sql = "SELECT 
+                MIN(md.id) as id,
+                md.branch_id,
+                md.supplier_id,
+                md.brand_id,
+                md.model_id,
+                md.model_name,
+                md.ram,
+                md.storage,
+                md.color,
+                MIN(md.imei_1) as imei_1,
+                MIN(md.imei_2) as imei_2,
+                MIN(md.serial_number) as serial_number,
+                md.device_condition,
+                MAX(md.battery_health) as battery_health,
+                md.pta_status,
+                md.network_status,
+                md.warranty_months,
+                md.purchase_price,
+                md.additional_cost,
+                md.actual_cost,
+                md.selling_price,
+                md.device_status,
+                MAX(md.purchase_date) as purchase_date,
+                md.image,
+                md.description,
+                b.name as brand_name,
+                br.name as branch_name,
+                COUNT(md.id) as available_stock
             FROM mobile_devices md
             LEFT JOIN brands b ON md.brand_id = b.id
             LEFT JOIN branches br ON md.branch_id = br.id
@@ -29,7 +57,8 @@ if ($type === 'all' || $type === 'mobile') {
         $searchTerm = "%{$query}%";
         $params = array_merge($params, [$searchTerm, $searchTerm, $searchTerm, $searchTerm, $searchTerm]);
     }
-    $sql .= " ORDER BY md.id DESC LIMIT 30";
+    $sql .= " GROUP BY CASE WHEN md.device_condition = 'new' THEN CONCAT(md.branch_id, '_', md.model_name, '_', COALESCE(md.ram,''), '_', COALESCE(md.storage,''), '_', COALESCE(md.color,''), '_', md.selling_price) ELSE md.id END
+              ORDER BY id DESC LIMIT 30";
     $stmt = $pdo->prepare($sql);
     $stmt->execute($params);
     $results['mobiles'] = $stmt->fetchAll();
