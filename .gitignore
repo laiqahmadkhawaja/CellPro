@@ -1,0 +1,12 @@
+# Environment and local configs
+.env
+*.log
+
+# OS generated files
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# IDE files
+.vscode/
+.idea/

@@ -1,0 +1,11 @@
+# .htaccess for CellPro
+Options -Indexes
+
+# Protect sensitive database & config files
+<FilesMatch "^(schema\.sql|database\.php|\.env)">
+    Order allow,deny
+    Deny from all
+</FilesMatch>
+
+# Set UTF-8 encoding
+AddDefaultCharset UTF-8
